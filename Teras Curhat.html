@@ -1,0 +1,449 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Teras Curhat</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;700&family=Nunito+Sans:wght@400;600;700&display=swap">
+<style>
+  /* Layout: satu kolom obrolan di tengah layar, pesan Teras tanpa gelembung, pesan pengguna dalam gelembung bertinta. */
+  :root {
+    --bg: #eaf0f2;
+    --surface: #f8fafb;
+    --fg: #1c2833;
+    --muted: #566573;
+    --line: #cfdadf;
+    --accent: #2f7a78;
+    --accent-ink: #ffffff;
+    --user: #d5e6e4;
+    --danger: #a3402f;
+    --font-display: "Bricolage Grotesque", "Trebuchet MS", system-ui, sans-serif;
+    --font-body: "Nunito Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0f171d;
+      --surface: #17222a;
+      --fg: #e4ecf0;
+      --muted: #93a3ae;
+      --line: #26343e;
+      --accent: #6fc3bc;
+      --accent-ink: #0b1a19;
+      --user: #1f3a3a;
+      --danger: #e39a8a;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0f171d;
+    --surface: #17222a;
+    --fg: #e4ecf0;
+    --muted: #93a3ae;
+    --line: #26343e;
+    --accent: #6fc3bc;
+    --accent-ink: #0b1a19;
+    --user: #1f3a3a;
+    --danger: #e39a8a;
+    color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    background: radial-gradient(60rem 28rem at 50% -8rem, color-mix(in srgb, var(--accent) 14%, transparent), transparent 70%), var(--bg);
+    color: var(--fg);
+    font-family: var(--font-body);
+    font-size: 16px;
+    line-height: 1.6;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+    padding-block: 0;
+  }
+  .app {
+    height: 100%;
+    max-width: 720px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding-block: 16px 12px;
+    border-bottom: 1px solid var(--line);
+  }
+  .brand { min-width: 0; }
+  .brand h1 {
+    margin: 0;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 1.35rem;
+    letter-spacing: -0.01em;
+    line-height: 1.2;
+  }
+  .brand p { margin: 2px 0 0; color: var(--muted); font-size: 0.875rem; }
+  .ghost {
+    flex: none;
+    font: inherit;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--muted);
+    background: transparent;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: 6px 14px;
+    cursor: pointer;
+  }
+  .ghost:hover { color: var(--fg); border-color: var(--muted); }
+  .ghost.armed { color: var(--danger); border-color: var(--danger); }
+
+  .thread {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding-block: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    scroll-behavior: smooth;
+  }
+  .msg { max-width: 100%; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+  .msg .who {
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .msg .body { white-space: pre-wrap; overflow-wrap: anywhere; }
+  .msg.ai .body { max-width: 62ch; }
+  .msg.user { align-self: flex-end; align-items: flex-end; max-width: 85%; }
+  .msg.user .body {
+    background: var(--user);
+    padding: 10px 14px;
+    border-radius: 18px 18px 4px 18px;
+  }
+  .msg.err .body { color: var(--danger); }
+
+  .typing .body::after {
+    content: "";
+    display: inline-block;
+    width: 1.6em;
+    height: 0.5em;
+    vertical-align: middle;
+    background: radial-gradient(circle, var(--muted) 0.2em, transparent 0.22em) 0 50% / 0.55em 100% repeat-x;
+    animation: pulse 1.2s ease-in-out infinite;
+  }
+  @keyframes pulse { 0%, 100% { opacity: 0.35; } 50% { opacity: 1; } }
+
+  .starters { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+  .chip {
+    font: inherit;
+    font-size: 0.9rem;
+    color: var(--fg);
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: 7px 14px;
+    cursor: pointer;
+    text-align: left;
+  }
+  .chip:hover { border-color: var(--accent); }
+
+  .composer { padding-block: 10px 6px; }
+  .field {
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 22px;
+    padding: 6px 6px 6px 16px;
+  }
+  .field:focus-within { border-color: var(--accent); }
+  textarea {
+    flex: 1;
+    min-width: 0;
+    resize: none;
+    border: 0;
+    outline: 0;
+    background: transparent;
+    color: var(--fg);
+    font: inherit;
+    line-height: 1.5;
+    padding: 8px 0;
+    max-height: 9rem;
+  }
+  textarea::placeholder { color: var(--muted); }
+  .send {
+    flex: none;
+    width: 40px;
+    height: 40px;
+    border: 0;
+    border-radius: 50%;
+    background: var(--accent);
+    color: var(--accent-ink);
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+  }
+  .send:disabled { opacity: 0.4; cursor: default; }
+  .send svg { width: 20px; height: 20px; }
+
+  footer { padding-block: 4px 12px; color: var(--muted); font-size: 0.78rem; line-height: 1.5; }
+  footer p { margin: 0 0 4px; }
+  footer strong { color: var(--fg); font-weight: 700; }
+
+  button:focus-visible, textarea:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  @media (prefers-reduced-motion: reduce) {
+    .thread { scroll-behavior: auto; }
+    .typing .body::after { animation: none; }
+  }
+</style>
+
+<div class="app">
+  <header>
+    <div class="brand">
+      <h1>Teras</h1>
+      <p>Tempat cerita tanpa dihakimi</p>
+    </div>
+    <button class="ghost" id="reset" type="button">Mulai baru</button>
+  </header>
+
+  <main class="thread" id="thread" aria-live="polite">
+    <div class="msg ai" id="greeting">
+      <span class="who">Teras</span>
+      <div class="body">Halo, aku Teras. Di sini kamu boleh cerita apa saja, sepanjang atau sependek yang kamu mau. Aku dengerin. Lagi kepikiran apa?</div>
+      <div class="starters" id="starters">
+        <button class="chip" type="button">Hari ini capek banget</button>
+        <button class="chip" type="button">Aku lagi overthinking</button>
+        <button class="chip" type="button">Cuma pengen didengerin</button>
+      </div>
+    </div>
+  </main>
+
+  <div class="composer">
+    <form class="field" id="form">
+      <textarea id="input" rows="1" placeholder="Tulis ceritamu di sini" aria-label="Pesan untuk Teras" maxlength="4000"></textarea>
+      <button class="send" id="send" type="submit" aria-label="Kirim" disabled>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5"/><path d="M5 12l7-7 7 7"/></svg>
+      </button>
+    </form>
+  </div>
+
+  <footer>
+    <p>Teras adalah AI, bukan psikolog, dan tidak menggantikan bantuan profesional. Obrolan hanya tersimpan di browser ini.</p>
+    <p><strong>Kalau kamu merasa ingin menyakiti diri sendiri atau dalam bahaya,</strong> segera hubungi orang terdekat atau layanan darurat. Layanan Sehat Jiwa Kemenkes: telepon 119 lalu tekan 8.</p>
+  </footer>
+</div>
+
+<script>
+(function () {
+  var KEY = "teras-curhat-v1";
+  var INSTR = [
+    "Kamu adalah Teras, teman ngobrol yang hangat dan tenang untuk orang yang ingin curhat. Kamu AI, jangan pernah mengaku manusia atau psikolog.",
+    "Gaya: bahasa Indonesia santai dengan sapaan 'aku' dan 'kamu', seperti teman dekat yang peduli. Balasan pendek, biasanya 2 sampai 4 kalimat. Tanpa daftar, tanpa poin, tanpa format tebal, hampir tanpa emoji.",
+    "Tugas utama: mendengarkan. Akui dan sebut perasaan yang kamu tangkap dari ceritanya dengan kata-katamu sendiri, lalu ajukan paling banyak satu pertanyaan lembut yang membuka cerita lebih lanjut. Jangan buru-buru memberi solusi atau nasihat; tawarkan saran hanya jika diminta atau setelah dia jelas ingin itu. Jangan menggurui, jangan mendiagnosis, jangan menilai.",
+    "Validasi perasaannya, tetapi jangan membenarkan keyakinan yang keliru atau tindakan yang merugikan dirinya atau orang lain. Kalau dia hanya ingin didengar, cukup temani.",
+    "Keselamatan: kalau ada tanda dia ingin menyakiti diri, mengakhiri hidup, atau dalam bahaya, tanggapi dengan tenang dan penuh perhatian, tanyakan langsung dan dengan lembut tentang keadaannya, jangan memberi cara atau detail apa pun, dan dorong dia menghubungi orang yang dipercaya, tenaga profesional, atau layanan darurat. Sebutkan Layanan Sehat Jiwa Kemenkes lewat telepon 119 lalu tekan 8. Tetap temani dia dalam percakapan.",
+    "Berikut percakapannya. Balas hanya sebagai Teras, untuk pesan terakhir dari pengguna."
+  ].join("\n");
+
+  var thread = document.getElementById("thread");
+  var form = document.getElementById("form");
+  var input = document.getElementById("input");
+  var sendBtn = document.getElementById("send");
+  var resetBtn = document.getElementById("reset");
+  var starters = document.getElementById("starters");
+
+  var history = [];
+  var busy = false;
+  var sampleP = null;
+  var armedTimer = null;
+
+  try {
+    var raw = localStorage.getItem(KEY);
+    if (raw) {
+      var parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) {
+        history = parsed.filter(function (m) {
+          return m && (m.role === "user" || m.role === "assistant") && typeof m.content === "string";
+        }).slice(-60);
+      }
+    }
+  } catch (e) {}
+
+  function save() {
+    try { localStorage.setItem(KEY, JSON.stringify(history.slice(-60))); } catch (e) {}
+  }
+
+  function getSample() {
+    if (!sampleP) {
+      sampleP = (window.claude && window.claude.use ? window.claude.use("sample") : Promise.resolve(null))
+        .catch(function () { return null; });
+    }
+    return sampleP;
+  }
+
+  function scrollDown() { thread.scrollTop = thread.scrollHeight; }
+
+  function addMsg(kind, text) {
+    var wrap = document.createElement("div");
+    wrap.className = "msg " + kind;
+    if (kind !== "user") {
+      var who = document.createElement("span");
+      who.className = "who";
+      who.textContent = "Teras";
+      wrap.appendChild(who);
+    }
+    var body = document.createElement("div");
+    body.className = "body";
+    body.textContent = text;
+    wrap.appendChild(body);
+    thread.appendChild(wrap);
+    scrollDown();
+    return { wrap: wrap, body: body };
+  }
+
+  function renderHistory() {
+    history.forEach(function (m) {
+      addMsg(m.role === "user" ? "user" : "ai", m.content);
+    });
+    if (history.length) starters.hidden = true;
+  }
+
+  function updateButtons() {
+    sendBtn.disabled = busy || !input.value.trim();
+  }
+
+  function resize() {
+    input.style.height = "auto";
+    input.style.height = Math.min(input.scrollHeight, 144) + "px";
+  }
+
+  function buildInput() {
+    var recent = history.slice(-24);
+    while (recent.length && recent[0].role !== "user") recent.shift();
+    var msgs = [];
+    recent.forEach(function (m) {
+      var last = msgs[msgs.length - 1];
+      if (last && last.role === m.role) last.content += "\n" + m.content;
+      else msgs.push({ role: m.role, content: m.content });
+    });
+    msgs[0].content = INSTR + "\n\n---\n" + msgs[0].content;
+    return msgs;
+  }
+
+  function errorText(err) {
+    var code = err && err.code;
+    if (code === "not_granted") return "Izin untuk obrolan belum diberikan. Kirim lagi pesanmu dan setujui permintaan izinnya.";
+    if (code === "rate_limited") return "Pesannya terlalu cepat berturut-turut. Tunggu sebentar, lalu kirim lagi.";
+    if (code === "unavailable") return "Obrolan belum bisa dipakai di tampilan ini. Buka halaman ini lewat Claude dan masuk dengan akunmu.";
+    return "Balasan gagal dimuat. Pesanmu kukembalikan ke kotak tulis, kirim lagi ya.";
+  }
+
+  async function send(text) {
+    text = (text || "").trim();
+    if (busy || !text) return;
+    busy = true;
+    input.value = "";
+    resize();
+    updateButtons();
+    starters.hidden = true;
+
+    history.push({ role: "user", content: text });
+    save();
+    addMsg("user", text);
+    var ai = addMsg("ai typing", "");
+
+    try {
+      var sample = await getSample();
+      if (!sample) throw { code: "unavailable" };
+      var res = await sample(buildInput(), {
+        cache: false,
+        onText: function (t) {
+          ai.wrap.classList.remove("typing");
+          ai.body.textContent = t.text;
+          scrollDown();
+        }
+      });
+      var finalText = ((res && res.text) || "").trim();
+      if (!finalText) throw { code: "empty" };
+      ai.wrap.classList.remove("typing");
+      ai.body.textContent = finalText;
+      history.push({ role: "assistant", content: finalText });
+      save();
+    } catch (err) {
+      var partial = err && typeof err.text === "string" ? err.text.trim() : "";
+      if (partial) {
+        ai.wrap.classList.remove("typing");
+        ai.body.textContent = partial;
+        history.push({ role: "assistant", content: partial });
+        save();
+      } else {
+        history.pop();
+        save();
+        ai.wrap.className = "msg err";
+        ai.body.textContent = errorText(err);
+        input.value = text;
+        resize();
+      }
+    } finally {
+      busy = false;
+      updateButtons();
+      scrollDown();
+      input.focus();
+    }
+  }
+
+  form.addEventListener("submit", function (e) {
+    e.preventDefault();
+    send(input.value);
+  });
+
+  input.addEventListener("input", function () { resize(); updateButtons(); });
+  input.addEventListener("keydown", function (e) {
+    var desktop = window.matchMedia && window.matchMedia("(pointer: fine)").matches;
+    if (e.key === "Enter" && !e.shiftKey && !e.isComposing && desktop) {
+      e.preventDefault();
+      send(input.value);
+    }
+  });
+
+  starters.addEventListener("click", function (e) {
+    var chip = e.target.closest(".chip");
+    if (chip) send(chip.textContent);
+  });
+
+  resetBtn.addEventListener("click", function () {
+    if (!resetBtn.classList.contains("armed")) {
+      resetBtn.classList.add("armed");
+      resetBtn.textContent = "Yakin? Hapus obrolan";
+      armedTimer = setTimeout(disarm, 4000);
+      return;
+    }
+    disarm();
+    history = [];
+    save();
+    Array.prototype.slice.call(thread.querySelectorAll(".msg:not(#greeting)")).forEach(function (n) { n.remove(); });
+    starters.hidden = false;
+    input.value = "";
+    resize();
+    updateButtons();
+  });
+
+  function disarm() {
+    clearTimeout(armedTimer);
+    resetBtn.classList.remove("armed");
+    resetBtn.textContent = "Mulai baru";
+  }
+
+  renderHistory();
+  updateButtons();
+  getSample();
+})();
+</script>
+
+</body></html>
